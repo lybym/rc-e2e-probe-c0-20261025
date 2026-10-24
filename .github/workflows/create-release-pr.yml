@@ -1,0 +1,41 @@
+name: create-release-pr
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'RC version (e.g. 0.0.0-rc.1)'
+        required: true
+        type: string
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure git as github-actions[bot]
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Create release branch and notes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          BR="release/v${VERSION}"
+          git checkout -b "$BR"
+          mkdir -p release-notes
+          printf 'Release Notes\n- RC v%s prepared by create-release-pr workflow (Refs #1)\n' "$VERSION" > "release-notes/v${VERSION}.md"
+          git add .
+          git commit -m "chore(release): prepare v${VERSION}"
+          git push origin "$BR"
+      - name: Create Release PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh pr create --base main --head "release/v${VERSION}" \
+            --title "Release v${VERSION}" \
+            --body "Release Notes for v${VERSION} (Refs #1)"
