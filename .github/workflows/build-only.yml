@@ -1,0 +1,21 @@
+name: build-only
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create probe artifact
+        run: |
+          mkdir -p dist
+          printf 'probe artifact for rc-e2e-probe (no release actions here)\n' > dist/probe.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-artifact
+          path: dist/probe.txt
